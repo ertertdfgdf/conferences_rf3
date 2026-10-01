@@ -1,0 +1,35 @@
+<h1><%= title %></h1>
+
+<% if (errors && errors.length > 0) { %>
+    <ul>
+        <% errors.forEach(e => { %>
+            <li><%= e %></li>
+        <% }) %>
+    </ul>
+<% } %>
+
+<h2>Список заявок</h2>
+
+<% if (requests && requests.length > 0) { %>
+    <table border="1" cellpadding="8" style="border-collapse: collapse; width: 100%;">
+        <thead>
+            <tr>
+                <th>Название аудитории</th>
+                <th>Статус</th>
+            </tr>
+        </thead>
+        <tbody>
+            <% requests.forEach(request => { %>
+                <tr>
+                    <td><%= request.room_name %></td>
+                    <td><%= request.status %></td>
+                </tr>
+            <% }) %>
+        </tbody>
+    </table>
+<% } else { %>
+    <p>Заявок пока нет.</p>
+<% } %>
+
+<br>
+<a href="/">На главную</a>
