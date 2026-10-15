@@ -147,4 +147,106 @@ const result = db
     `,
   )
   .all();
+
+class UserModel {
+  constructor() {
+    this.table = "users";
+  }
+  findById(id) {
+    return db.prepare(`SELECT * FROM ${this.table} WHERE id = ?`).get(id);
+  }
+  findByLogin(login) {
+    return db.prepare(`SELECT * FROM ${this.table} WHERE login = ?`).get(login);
+  }
+
+  findALL() {
+    return db.prepare(`SELECT * FROM ${this.table}`).all();
+  }
+
+  count() {
+    return db.prepare(`SELECT COUNT(*) as count FROM ${this.table}`).get()
+      .count;
+  }
+
+  exists(login) {
+    const user = db
+      .prepare(`SELECT id FROM ${this.table} WHERE login = ?`)
+      .get(login);
+  }
+}
+
+class RoomModel {
+  constructor() {
+    this.table = "rooms";
+  }
+
+  findAll() {
+    return db.prepare(`SELECT * FROM ${this.table}`).all();
+  }
+
+  findById(id) {
+    return db.prepare(`SELECT * FROM ${this.table} WHERE id = ? `).get(id);
+  }
+
+  findByType(type) {
+    return db.prepare(`SELECT * FROM ${this.table} WHERE type = ?`).all(type);
+  }
+
+  count() {
+    return db.prepare(`SELECT COUNT(*) as count FROM ${this.table}`).get()
+      .count;
+  }
+}
+
+class RequestModel {
+  constructor() {
+    this.table = "requests";
+  }
+
+  findById(id) {
+    return db.prepare(`SELECT * FROM ${this.table} WHERE id = ? `).get(id);
+  }
+
+  findByUser(userid) {
+    return db
+      .prepare(
+        `
+        SELECT ${this.table}.*, rooms.name AS room_name
+        FROM ${this.table}
+        JOIN rooms ON ${this.table}. room_id=rooms.id
+        WHERE ${this.table}.user_id = ?
+        `,
+      )
+      .all(userid);
+  }
+
+  findAllDetailed() {
+    return db
+      .prepare(
+        `
+        SELECT ${this.table}.*,
+        users.fio AS user_name,
+        rooms.name AS room_name,
+        rooms.type AS room_type
+        FROM ${this.table}
+        JOIN users ON ${this.table}.user_id=users.id
+        JOIN rooms ON ${this.table}.room_id=rooms.id
+        `,
+      )
+      .all();
+  }
+  count() {
+    return db.prepare(`SELECT COUNT(*) as count FROM ${this.table}`).get()
+      .count;
+  }
+  updateStatus(id, status) {
+    return db
+      .prepare(`UPDATE ${this.table} SET status = ? WHERE id = ?`)
+      .run(status, id);
+  }
+}
+export const User = new UserModel();
+export const Room = new RoomModel();
+export const Request = new RequestModel();
+
 export default db;
