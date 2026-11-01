@@ -1,6 +1,7 @@
 import Database from "better-sqlite3";
 import { fileURLToPath } from "url";
 import { dirname, join } from "path";
+import bcrypt from "bcryptjs";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const db = new Database(join(__dirname, "conf.db"));
@@ -25,6 +26,8 @@ db.exec(`
 
 const count = db.prepare("SELECT COUNT(*) AS c FROM users").get().c;
 
+const hash = (pwd) => bcrypt.hashSync(pwd, 10);
+
 if (count === 0) {
   const stmt = db.prepare(`
        INSERT INTO users (login, password, fio, phone, email)
@@ -32,25 +35,26 @@ if (count === 0) {
     `);
   stmt.run(
     "ivan",
-    "demo",
+    hash('demo'),
     "Иванов Иван",
     "8(999)123-45-67",
     "ivan@example.com",
   );
   stmt.run(
     "petr",
-    "demo",
+    hash('demo'),
     "Петров Пётр",
     "8(999)123-45-68",
     "petr@example.com",
   );
   stmt.run(
     "anna",
-    "demo",
+    hash('demo'),
     "Сидорова Анна",
     "8(999)123-45-69",
     "anna@example.com",
   );
+  stmt.run('Conf2027', hash('Demo77'), 'Администратор', '8(999)000-00-00', 'admin@conf.ru')
   console.log("Тестовые пользователи добавлены");
 }
 
@@ -173,6 +177,19 @@ class UserModel {
       .prepare(`SELECT id FROM ${this.table} WHERE login = ?`)
       .get(login);
   }
+
+  create({ login, password, fio, phone, email }) {
+    const hash = bcrypt.hashSync(password, 10);
+    const r = db
+      .prepare(
+        ` 
+      INSERT INTO ${this.table} (login, password, fio, phone, email)
+      VALUES (?, ?, ?, ?, ?)
+      `,
+      )
+      .run(login, hash, fio, phone, email);
+    return this.findById(r.lastInsertRowid);
+  }
 }
 
 class RoomModel {
@@ -244,6 +261,44 @@ class RequestModel {
       .prepare(`UPDATE ${this.table} SET status = ? WHERE id = ?`)
       .run(status, id);
   }
+
+  create({ userId, roomId, dateStart, payment }) {
+    const r = db
+      .prepare(
+        `
+      INSERT INTO ${this.table} (user_id, room_id, date_start, payment)
+      VALUES (?, ?, ?, ?)
+      `,
+      )
+      .run(userId, roomId, dateStart, payment);
+    return this.findById(r.lastInsertRowid);
+  }
+
+  findDetailed(id) {
+  return db.prepare(`
+    SELECT r.*,
+           u.fio AS user_fio,
+           u.login AS user_login,
+           u.email AS user_email,
+           u.phone AS user_phone,
+           rm.name AS room_name,
+           rm.type AS room_type,
+           rm.capacity AS room_capacity
+    FROM ${this.table} r
+    JOIN users u ON u.id = r.user_id
+    JOIN rooms rm ON rm.id = r.room_id
+    WHERE r.id = ?
+  `).get(id);
+}
+addReview(id, userId, review) {
+  if (!review || !review.trim()) return false;
+  const r = db.prepare(`
+    UPDATE ${this.table}
+    SET review = ?
+    WHERE id = ? AND user_id = ? AND status = 'Завершено'
+  `).run(review.trim(), id, userId);
+  return r.changes > 0;
+}
 }
 export const User = new UserModel();
 export const Room = new RoomModel();
