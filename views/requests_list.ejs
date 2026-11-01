@@ -38,6 +38,10 @@
           <p class="mb-1"><b>Дата:</b> <%= r.date_start %></p>
           <p class="mb-2"><b>Оплата:</b> <%= r.payment %></p>
 
+          <a href="/request/<%= r.id %>" class="btn btn-sm btn-outline-primary mt-2">
+            Подробнее
+          </a>
+
           <% if (isAdmin) { %>
             <form method="POST" action="/admin" class="d-flex gap-2 mt-2">
               <input type="hidden" name="id" value="<%= r.id %>">
